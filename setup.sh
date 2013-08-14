@@ -36,51 +36,89 @@
 #     directory and virtual environment)
 
 
-### Help text
+# setting text colors
+txtbold=$(tput bold)
+txtred=$(tput setaf 1)
+txtgreen=$(tput setaf 2)
+txtblue=$(tput setaf 4)
+txtwhite=$(tput setaf 7)
+txtboldred=${txtbold}$(tput setaf 1)
+txtboldgreen=${txtbold}$(tput setaf 2)
+txtboldblue=$(tput setaf 4)
+txtboldwhite=${txtbold}$(tput setaf 7)
+txtreset=$(tput sgr0)
+
+
+### Runtime arguments and help text
+nodependencies=0
 case "$1" in
     --help|-h)
-        echo "Install Ganeti Web Manager.
+        echo "Install Ganeti Web Manager (by default: to 'ganeti_webmgr' directory).
 
-Usage:
-  setup.sh -h | --help
-  setup.sh <install directory>
+Usage: setup.sh [--option] <install directory>
+
+Default installation directory: ./ganeti_webmgr
 
 Options:
-  -h --help     Show this screen."
+  --no-system-deps   Don't try to install system dependencies.
+  -h --help          Show this screen."
         exit 0
+    ;;
+
+    --no-system-deps)
+        nodependencies=1
     ;;
 esac
 
 #------------------------------------------------------------------------------
 
-### detecting if it's Debian or CentOS
-if [ -f '/usr/bin/apt-get' ]; then
-    # it's apparently Debian-based system
-    package_manager='apt-get'
-    package_manager_cmds='install'
-    os='debian'
+### whether we should try to install system dependencies
+if [ $nodependencies -eq 0 ]; then
 
-elif [ -f '/usr/bin/yum' ]; then
-    # nah, it's CentOS!
-    package_manager='yum'
-    package_manager_cmds='install'
-    os='centos'
+    ### detecting if it's Debian or CentOS
+    if [ -f '/usr/bin/apt-get' ]; then
+        # it's apparently Debian-based system
+        package_manager='apt-get'
+        package_manager_cmds='install'
+        os='debian'
 
-else
-    # unknown Linux distribution
-    echo "Unknown distribution!  Cannot install required dependencies!"
-    exit 1
+    elif [ -f '/usr/bin/yum' ]; then
+        # nah, it's CentOS!
+        package_manager='yum'
+        package_manager_cmds='install'
+        os='centos'
+
+    else
+        # unknown Linux distribution
+        echo "${txtboldred}Unknown distribution! Cannot install required dependencies!"
+        echo "Please install on your own:"
+        echo "- Python (version 2.6.x or 2.7.x)"
+        echo "- python-virtualenv"
+        echo "...and run setup:"
+        echo " $0 --no-system-deps $1 ${txtreset}"
+        exit 1
+    fi
+
+    echo ""
+    echo "------------------------------------------------------------------------"
+    echo "Detected package manager: $package_manager"
+    echo "Installing system dependencies.  ${txtboldblue}Please enter your password and confirm"
+    echo "installation.${txtreset}"
+    echo "------------------------------------------------------------------------"
+
+    ### installing system dependencies
+    sudo ${package_manager} ${package_manager_cmds} python python-virtualenv
+
+    # check whether installation succeeded
+    if [ ! $? -eq 0 ]; then
+        echo "${txtboldred}Something went wrong. Please install these required dependencies on your"
+        echo "own:"
+        echo "- Python (version 2.6.x or 2.7.x)"
+        echo "- python-virtualenv"
+        echo "and suppress installing them via --no-system-deps option. ${txtreset}"
+        exit 2
+    fi
 fi
-
-echo ""
-echo "------------------------------------------------------------------------"
-echo "Detected package manager: $package_manager"
-echo "Installing system dependencies.  Please enter your password and confirm"
-echo "installation."
-echo "------------------------------------------------------------------------"
-
-### installing system dependencies
-sudo ${package_manager} ${package_manager_cmds} python python-virtualenv
 
 echo ""
 echo "------------------------------------------------------------------------"
@@ -91,12 +129,17 @@ echo "------------------------------------------------------------------------"
 venv='/usr/bin/virtualenv'
 
 # check if user has provided any installation path
-if [ "$1" ]; then
+if [ "$2" ]; then
+    install_directory="$2"
+elif [ "$1" != "--no-system-deps" ]; then
     install_directory="$1"
 else
     # nothing provided, we create our own directory
     install_directory="./ganeti_webmgr"
 fi
+
+echo 'Installing to: $install_directory'
+
 ${venv} --setuptools --no-site-packages ${install_directory}
 
 ### updating pip and setuptools to the newest versions
