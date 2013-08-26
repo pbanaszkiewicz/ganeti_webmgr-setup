@@ -17,7 +17,7 @@
 # 4. installs newest ``pip`` and ``setuptools`` in that virtual environment
 #    (they're needed for ``wheel`` packages below)
 #
-# 5. installs GWM dependencies into that virtual environment (some of them might
+# 5. installs GWM dependencies into that virtual environment (some of them may
 #    need to be provided as ``wheel`` binary packages, because GWM users might
 #    not be allowed to have ``gcc`` & co. installed)
 #
@@ -35,6 +35,8 @@
 # 10. generates proper WSGI file for the project (that can work with custom
 #     directory and virtual environment)
 
+# TODO: check if everything exists, use getopts (single var opt), don't
+#       reference $1 and $2 explicitely
 
 # setting text colors
 txtbold=$(tput bold)
@@ -47,6 +49,13 @@ txtboldgreen=${txtbold}$(tput setaf 2)
 txtboldblue=$(tput setaf 4)
 txtboldwhite=${txtbold}$(tput setaf 7)
 txtreset=$(tput sgr0)
+
+check_if_exists() {
+    if [ ! -f $1 ]; then
+        echo "${txtboldred}Cannot find $1! It's necessary to complete installation.${txtreset}"
+        exit 1
+    fi
+}
 
 
 ### Runtime arguments and help text
@@ -96,7 +105,7 @@ if [ $nodependencies -eq 0 ]; then
         echo "- python-virtualenv"
         echo "...and run setup:"
         echo " $0 --no-system-deps $1 ${txtreset}"
-        exit 1
+        exit 2
     fi
 
     echo ""
@@ -107,7 +116,8 @@ if [ $nodependencies -eq 0 ]; then
     echo "------------------------------------------------------------------------"
 
     ### installing system dependencies
-    sudo ${package_manager} ${package_manager_cmds} python python-virtualenv
+    check_if_exists "/usr/bin/sudo"
+    /usr/bin/sudo ${package_manager} ${package_manager_cmds} python python-virtualenv
 
     # check whether installation succeeded
     if [ ! $? -eq 0 ]; then
@@ -116,7 +126,7 @@ if [ $nodependencies -eq 0 ]; then
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
         echo "and suppress installing them via --no-system-deps option. ${txtreset}"
-        exit 2
+        exit 3
     fi
 fi
 
@@ -127,6 +137,8 @@ echo "------------------------------------------------------------------------"
 
 ### creating virtual environment
 venv='/usr/bin/virtualenv'
+
+check_if_exists $venv
 
 # check if user has provided any installation path
 if [ "$2" ]; then
@@ -142,6 +154,15 @@ echo 'Installing to: $install_directory'
 
 ${venv} --setuptools --no-site-packages ${install_directory}
 
+# check if virtualenv has succeeded
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not create virtual environment"
+    echo "in this path:"
+    echo "  ${install_directory}${txtreset}"
+    echo "Please create virtual environment manually by using virtualenv command."
+    exit 4
+fi
+
 ### updating pip and setuptools to the newest versions
 ${install_directory}/bin/pip install --upgrade setuptools pip
 
@@ -149,3 +170,4 @@ echo ""
 echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager dependencies"
 echo "------------------------------------------------------------------------"
+
