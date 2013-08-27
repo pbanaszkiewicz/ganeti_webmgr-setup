@@ -83,7 +83,7 @@ architecture=`uname -i`
 
 install_directory='./ganeti_webmgr'
 no_dependencies=0
-update=0
+upgrade=0
 
 ### Runtime arguments and help text
 while getopts "hu:d:N" opt; do
