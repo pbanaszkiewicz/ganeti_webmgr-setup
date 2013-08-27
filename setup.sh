@@ -35,9 +35,7 @@
 # 10. generates proper WSGI file for the project (that can work with custom
 #     directory and virtual environment)
 
-# TODO: use getopts (single var opt), don't reference $1 and $2 explicitely
-
-# setting text colors
+# helpers: setting text colors
 txtbold=$(tput bold)
 txtred=$(tput setaf 1)
 txtgreen=$(tput setaf 2)
@@ -49,48 +47,83 @@ txtboldblue=$(tput setaf 4)
 txtboldwhite=${txtbold}$(tput setaf 7)
 txtreset=$(tput sgr0)
 
+# helper function: check if some binary exists and is callable and otherwise
+# echo warning
 check_if_exists() {
-    if [ ! -f $1 ]; then
-        echo "${txtboldred}Cannot find $1! It's necessary to complete installation.${txtreset}"
+    if [ ! -x $1 ]; then
+        echo "${txtboldred}Cannot find $1! It's necessary to complete" \
+             "installation.${txtreset}"
         exit 1
     fi
 }
 
+# helper function: display help message
+usage() {
+echo "Install (or upgrade) fresh Ganeti Web Manager from OSUOSL servers.
 
-### Runtime arguments and help text
-nodependencies=0
-case "$1" in
-    --help|-h)
-        echo "Install Ganeti Web Manager (by default: to 'ganeti_webmgr' directory).
-
-Usage: setup.sh [--option] <install directory>
+Usage:
+    $0 [-h]
+    $0 [-d <dir>] [-N]
+    $0 [-u <dir>]
 
 Default installation directory: ./ganeti_webmgr
 
 Options:
-  --no-system-deps   Don't try to install system dependencies.
-  -h --help          Show this screen."
-        exit 0
-    ;;
+  -d <install_directory>       Specify install directory.
+  -N                           Don't try to install system dependencies.
+  -u <install_directory>       Upgrade existing installation.
+  -h                           Show this screen."
+    exit 0
+}
 
-    --no-system-deps)
-        nodependencies=1
-    ;;
-esac
+# helper "function": read computers architecture
+architecture=`uname -i`
+
+# TODO: better architecture and OS recognizing
+
+install_directory='./ganeti_webmgr'
+no_dependencies=0
+update=0
+
+### Runtime arguments and help text
+while getopts "hu:d:N" opt; do
+    case $opt in
+        h)
+            usage
+            ;;
+
+        u)
+            upgrade=1
+            install_directory=${OPTARG}
+            ;;
+        d)
+            install_directory=${OPTARG}
+            ;;
+
+        N)
+            no_dependencies=1
+            ;;
+
+        \?)
+            # unknown parameter
+            exit 2
+            ;;
+    esac
+done
 
 #------------------------------------------------------------------------------
 
 ### whether we should try to install system dependencies
-if [ $nodependencies -eq 0 ]; then
+if [ $no_dependencies -eq 0 ]; then
 
     ### detecting if it's Debian or CentOS
-    if [ -f '/usr/bin/apt-get' ]; then
+    if [ -x '/usr/bin/apt-get' ]; then
         # it's apparently Debian-based system
         package_manager='apt-get'
         package_manager_cmds='install'
         os='debian'
 
-    elif [ -f '/usr/bin/yum' ]; then
+    elif [ -x '/usr/bin/yum' ]; then
         # nah, it's CentOS!
         package_manager='yum'
         package_manager_cmds='install'
@@ -98,13 +131,14 @@ if [ $nodependencies -eq 0 ]; then
 
     else
         # unknown Linux distribution
-        echo "${txtboldred}Unknown distribution! Cannot install required dependencies!"
+        echo "${txtboldred}Unknown distribution! Cannot install required" \
+             "dependencies!"
         echo "Please install on your own:"
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
         echo "...and run setup:"
-        echo " $0 --no-system-deps $1 ${txtreset}"
-        exit 2
+        echo " $0 -N ${txtreset}"
+        exit 3
     fi
 
     echo ""
@@ -115,17 +149,20 @@ if [ $nodependencies -eq 0 ]; then
     echo "------------------------------------------------------------------------"
 
     ### installing system dependencies
-    check_if_exists "/usr/bin/sudo"
-    /usr/bin/sudo ${package_manager} ${package_manager_cmds} python python-virtualenv
+    sudo="/usr/bin/sudo"
+    check_if_exists $sudo
+
+    ${sudo} ${package_manager} ${package_manager_cmds} python python-virtualenv
 
     # check whether installation succeeded
     if [ ! $? -eq 0 ]; then
-        echo "${txtboldred}Something went wrong. Please install these required dependencies on your"
+        echo "${txtboldred}Something went wrong. Please install these" \
+             "required dependencies on your"
         echo "own:"
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
-        echo "and suppress installing them via --no-system-deps option. ${txtreset}"
-        exit 3
+        echo "and suppress installing them via --no-system-deps option.${txtreset}"
+        exit 4
     fi
 fi
 
@@ -136,37 +173,53 @@ echo "------------------------------------------------------------------------"
 
 ### creating virtual environment
 venv='/usr/bin/virtualenv'
-
 check_if_exists $venv
 
-# check if user has provided any installation path
-if [ "$2" ]; then
-    install_directory="$2"
-elif [ "$1" != "--no-system-deps" ]; then
-    install_directory="$1"
+# installing fresh
+if [ -eq $upgrade 0 ]; then
+    echo "Installing to: $install_directory"
+
+    ${venv} --setuptools --no-site-packages ${install_directory}
+    # check if virtualenv has succeeded
+    if [ ! $? -eq 0 ]; then
+        echo "${txtboldred}Something went wrong. Could not create virtual" \
+             "environment"
+        echo "in this path:"
+        echo "  ${install_directory}${txtreset}"
+        echo "Please create virtual environment manually by using virtualenv" \
+             "command."
+        exit 5
+    fi
+
+# nope! upgrading!
 else
-    # nothing provided, we create our own directory
-    install_directory="./ganeti_webmgr"
-fi
+    echo "Upgrading: $install_directory"
 
-echo 'Installing to: $install_directory'
-
-${venv} --setuptools --no-site-packages ${install_directory}
-
-# check if virtualenv has succeeded
-if [ ! $? -eq 0 ]; then
-    echo "${txtboldred}Something went wrong. Could not create virtual environment"
-    echo "in this path:"
-    echo "  ${install_directory}${txtreset}"
-    echo "Please create virtual environment manually by using virtualenv command."
-    exit 4
+    # Nothing to do here.  Using pip in a right way handles upgrading
+    # automatically.
 fi
 
 ### updating pip and setuptools to the newest versions
-${install_directory}/bin/pip install --upgrade setuptools pip
+pip=${install_directory}/bin/pip
+check_if_exists $pip
+${pip} install --upgrade setuptools pip
+
+# check if successfully upgraded pip and setuptools
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not upgrade pip nor" \
+         "setuptools"
+    echo "in this virtual environment:"
+    echo "  ${install_directory}${txtreset}"
+    echo "Please upgrade pip and setuptools manually by issueing this" \
+         "command:"
+    echo "  ${pip} install --upgrade setuptools pip"
+    exit 5
+fi
 
 echo ""
 echo "------------------------------------------------------------------------"
-echo "Installing Ganeti Web Manager dependencies"
+echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
+url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/${os}/${architecture}/"
+echo $url
