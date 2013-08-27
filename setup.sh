@@ -35,8 +35,7 @@
 # 10. generates proper WSGI file for the project (that can work with custom
 #     directory and virtual environment)
 
-# TODO: check if everything exists, use getopts (single var opt), don't
-#       reference $1 and $2 explicitely
+# TODO: use getopts (single var opt), don't reference $1 and $2 explicitely
 
 # setting text colors
 txtbold=$(tput bold)
@@ -111,8 +110,8 @@ if [ $nodependencies -eq 0 ]; then
     echo ""
     echo "------------------------------------------------------------------------"
     echo "Detected package manager: $package_manager"
-    echo "Installing system dependencies.  ${txtboldblue}Please enter your password and confirm"
-    echo "installation.${txtreset}"
+    echo "Installing system dependencies.  ${txtboldblue}Please enter your"
+    echo "password and confirm installation.${txtreset}"
     echo "------------------------------------------------------------------------"
 
     ### installing system dependencies
