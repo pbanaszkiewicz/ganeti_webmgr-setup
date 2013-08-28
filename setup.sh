@@ -69,7 +69,7 @@ Default installation directory: ./ganeti_webmgr
 Options:
   -d <install_directory>       Specify install directory.
   -N                           Don't try to install system dependencies.
-  -u <install_directory>       Upgrade existing installation.
+  -u <install_directory>       Upgrade existing installation. Forces -N
   -h                           Show this screen."
     exit 0
 }
@@ -81,19 +81,23 @@ os='unknown'
 
 if [ -x $lsb_release ]; then
     # we pull in default values, should work for both Debian and Ubuntu
-    os=`$lsb_release -i | cut -f2 | tr "[:upper:]" "[:lower:]"`
-    os_codename=`$lsb_release -c | cut -f2 | tr "[:upper:]" "[:lower:]"`
+    os=`$lsb_release -s -i | tr "[:upper:]" "[:lower:]"`
+
+    if [ "$OS" == "centos" ]; then
+        os_codename=`$lsb_release -s -r | sed -e 's/\..*//'`
+    else
+        os_codename=`$lsb_release -s -c | tr "[:upper:]" "[:lower:]"`
+    fi
 
 elif [ -r "/etc/redhat-release" ]; then
     # it's either RHEL or CentOS, which is fine
     os='centos'
 
     # instead of codename, we pull in release version ('6.3', '6.4', etc)
-    os_codename=`cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
+    os_codename=`sed s/.*release\ // /etc/redhat-release | sed s/\ .*//`
 fi
 
-echo $os $os_codename $architecture
-exit 0
+#------------------------------------------------------------------------------
 
 install_directory='./ganeti_webmgr'
 no_dependencies=0
@@ -109,6 +113,7 @@ while getopts "hu:d:N" opt; do
         u)
             upgrade=1
             install_directory=${OPTARG}
+            no_dependencies=1
             ;;
         d)
             install_directory=${OPTARG}
@@ -182,7 +187,7 @@ if [ $no_dependencies -eq 0 ]; then
         echo "own:"
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
-        echo "and suppress installing them via --no-system-deps option.${txtreset}"
+        echo "and suppress installing them via -N runtime argument.${txtreset}"
         exit 4
     fi
 fi
@@ -242,5 +247,5 @@ echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
-url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/${os}/${architecture}/"
+url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/${os}/${os_codename}/${architecture}/"
 echo $url
