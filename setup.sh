@@ -17,23 +17,21 @@
 # 4. installs newest ``pip`` and ``setuptools`` in that virtual environment
 #    (they're needed for ``wheel`` packages below)
 #
-# 5. installs GWM dependencies into that virtual environment (some of them may
-#    need to be provided as ``wheel`` binary packages, because GWM users might
-#    not be allowed to have ``gcc`` & co. installed)
+# 5. installs GWM dependencies into that virtual environment (all of them will
+#    be provided as ``wheel`` binary packages, because GWM users might not be
+#    allowed to have ``gcc`` & co. installed)
 #
 # 6. installs GWM itself into that virtual environment
 #
 # 7. creates configuration directory near that virtual environment with sane
-#    default settings in there
+#    default settings in there and random ``SECRET_KEY``
 #
 # 8. installs GWM tools (ie. ``/usr/bin/gwm*``, like webserver or update
 #    utility) that use above configuration directory (for example through
 #    environment variable, like Django does with ``DJANGO_SETTINGS_MODULE``)
 #
-# 9. generates random ``SECRET_KEY`` (with read access only for GWM webserver)
-#
-# 10. generates proper WSGI file for the project (that can work with custom
-#     directory and virtual environment)
+# 9. generates proper WSGI file for the project (that can work with custom
+#    directory and virtual environment)
 
 # helpers: setting text colors
 txtbold=$(tput bold)
@@ -76,10 +74,26 @@ Options:
     exit 0
 }
 
-# helper "function": read computers architecture
+# helper: architecture and OS recognizing
+lsb_release='/usr/bin/lsb_release'
 architecture=`uname -i`
+os='unknown'
 
-# TODO: better architecture and OS recognizing
+if [ -x $lsb_release ]; then
+    # we pull in default values, should work for both Debian and Ubuntu
+    os=`$lsb_release -i | cut -f2 | tr "[:upper:]" "[:lower:]"`
+    os_codename=`$lsb_release -c | cut -f2 | tr "[:upper:]" "[:lower:]"`
+
+elif [ -r "/etc/redhat-release" ]; then
+    # it's either RHEL or CentOS, which is fine
+    os='centos'
+
+    # instead of codename, we pull in release version ('6.3', '6.4', etc)
+    os_codename=`cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
+fi
+
+echo $os $os_codename $architecture
+exit 0
 
 install_directory='./ganeti_webmgr'
 no_dependencies=0
@@ -116,30 +130,37 @@ done
 ### whether we should try to install system dependencies
 if [ $no_dependencies -eq 0 ]; then
 
-    ### detecting if it's Debian or CentOS
-    if [ -x '/usr/bin/apt-get' ]; then
-        # it's apparently Debian-based system
-        package_manager='apt-get'
-        package_manager_cmds='install'
-        os='debian'
+    case $os in
+        debian)
+            package_manager='apt-get'
+            package_manager_cmds='install'
+            check_if_exists "/usr/bin/${package_manager}"
+            ;;
 
-    elif [ -x '/usr/bin/yum' ]; then
-        # nah, it's CentOS!
-        package_manager='yum'
-        package_manager_cmds='install'
-        os='centos'
+        ubuntu)
+            package_manager='apt-get'
+            package_manager_cmds='install'
+            check_if_exists "/usr/bin/${package_manager}"
+            ;;
 
-    else
-        # unknown Linux distribution
-        echo "${txtboldred}Unknown distribution! Cannot install required" \
-             "dependencies!"
-        echo "Please install on your own:"
-        echo "- Python (version 2.6.x or 2.7.x)"
-        echo "- python-virtualenv"
-        echo "...and run setup:"
-        echo " $0 -N ${txtreset}"
-        exit 3
-    fi
+        centos)
+            package_manager='yum'
+            package_manager_cmds='install'
+            check_if_exists "/usr/bin/${package_manager}"
+            ;;
+
+        unknown)
+            # unknown Linux distribution
+            echo "${txtboldred}Unknown distribution! Cannot install required" \
+                 "dependencies!"
+            echo "Please install on your own:"
+            echo "- Python (version 2.6.x or 2.7.x)"
+            echo "- python-virtualenv"
+            echo "...and run setup suppressing installation of required deps:"
+            echo "  $0 -N ${txtreset}"
+            exit 3
+            ;;
+    esac
 
     echo ""
     echo "------------------------------------------------------------------------"
