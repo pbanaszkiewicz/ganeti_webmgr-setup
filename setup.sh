@@ -202,7 +202,7 @@ venv='/usr/bin/virtualenv'
 check_if_exists $venv
 
 # installing fresh
-if [ -eq $upgrade 0 ]; then
+if [ $upgrade -eq 0 ]; then
     echo "Installing to: $install_directory"
 
     ${venv} --setuptools --no-site-packages ${install_directory}
@@ -249,3 +249,16 @@ echo "------------------------------------------------------------------------"
 
 url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/${os}/${os_codename}/${architecture}/"
 echo $url
+
+${pip} install --upgrade --use-wheel --find-link="${url}" ganeti_webmgr
+
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not install GWM nor its" \
+         "dependencies"
+    echo "in this virtual environment:"
+    echo "  ${install_directory}${txtreset}"
+    echo "Please check if you have internet access and consult with official" \
+         "GWM documentation:"
+    echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
+    exit 6
+fi
