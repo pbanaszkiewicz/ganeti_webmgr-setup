@@ -118,21 +118,49 @@ check_if_exists "/usr/bin/git"
 
 # create venv
 /usr/bin/virtualenv --setuptools --no-site-packages "${env_dir}"
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not create virtual" \
+         "environment"
+    echo "in this path:"
+    echo "  ${env_dir}${txtreset}"
+    exit 3
+fi
 
 # update pip, setuptools and wheel
 pip="${env_dir}/bin/pip"
 check_if_exists "${pip}"
-${pip} install --upgrade pip setuptools wheel
+${pip} install --upgrade setuptools pip wheel
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not install setuptools," \
+         "pip or wheel"
+    echo "in this virtual environment:"
+    echo "  ${env_dir}${txtreset}"
+    exit 4
+fi
 
 # clone gwm if it doesn't exist
 if [ ! -d "{$gwm_dir}" ]; then
-    /usr/bin/git clone git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr \
-                 "${gwm_dir}"
+    gwm_address='git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr'
+    /usr/bin/git clone "${gwm_address}" "${gwm_dir}"
+
+    if [ ! $? -eq 0 ]; then
+        echo "${txtboldred}Something went wrong. Could clone GWM repository."
+        echo "Check if repository address is correct:"
+        echo "  ${gwm_address}${txtreset}"
+        exit 5
+    fi
 fi
 
 # install gwm into venv, put wheels to the wheel dir
 wheel_path="${wheels_dir}/${os}/${os_codename}/${architecture}"
-${pip} wheel --wheel-dir="${wheel_path}" "${gwm_dir}"
+${pip} wheel --log=./pip.log --wheel-dir="${wheel_path}" "${gwm_dir}"
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not create wheel" \
+         "packages."
+    echo "Check out pip log to see more:"
+    echo "  ./pip.log${txtreset}"
+    exit 6
+fi
 
 # remove venv
 /bin/rm "${env_dir}" -r
