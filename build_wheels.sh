@@ -114,7 +114,8 @@ check_if_exists "/usr/bin/virtualenv"
 check_if_exists "/usr/bin/git"
 
 # remove venv
-/bin/rm "${env_dir}" -r 2>/dev/null
+# use force in case rm is aliased to 'rm -i' or something as nasty
+/bin/rm "${env_dir}" -rf 2>/dev/null
 
 # create venv
 /usr/bin/virtualenv --setuptools --no-site-packages "${env_dir}"

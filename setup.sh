@@ -61,16 +61,22 @@ echo "Install (or upgrade) fresh Ganeti Web Manager from OSUOSL servers.
 
 Usage:
     $0 [-h]
-    $0 [-d <dir>] [-N]
+    $0 [-d <dir>] [-D <database>] [-N]
     $0 [-u <dir>]
 
 Default installation directory: ./ganeti_webmgr
+Default database server:        SQLite
 
 Options:
-  -d <install_directory>       Specify install directory.
-  -N                           Don't try to install system dependencies.
-  -u <install_directory>       Upgrade existing installation. Forces -N
-  -h                           Show this screen."
+  -h                            Show this screen.
+  -d <install_directory>        Specify install directory.
+  -D <database_server>          Either 'postgresql' or 'mysql' or 'sqlite'.
+                                This option will try to install required
+                                dependencies for selected database server
+                                (unless -N).  If you don't specify it, SQLite
+                                will be assumed the default DB.
+  -N                            Don't try to install system dependencies.
+  -u <install_directory>        Upgrade existing installation. Forces -N."
     exit 0
 }
 
@@ -90,7 +96,7 @@ if [ -x $lsb_release ]; then
     fi
 
 elif [ -r "/etc/redhat-release" ]; then
-    # it's either RHEL or CentOS, which is fine
+    # it's either RHEL or CentOS, both is fine
     os='centos'
 
     # instead of codename, we pull in release version ('6.3', '6.4', etc)
@@ -102,9 +108,10 @@ fi
 install_directory='./ganeti_webmgr'
 no_dependencies=0
 upgrade=0
+database_server='sqlite'
 
 ### Runtime arguments and help text
-while getopts "hu:d:N" opt; do
+while getopts "hu:d:D:N" opt; do
     case $opt in
         h)
             usage
@@ -115,8 +122,21 @@ while getopts "hu:d:N" opt; do
             install_directory=${OPTARG}
             no_dependencies=1
             ;;
+
         d)
             install_directory=${OPTARG}
+            ;;
+
+        D)
+            database=${OPTARG}
+            echo $database | grep -e '^postgres' -i 1>/dev/null
+            if [ $? -eq 0 ]; then
+                database_server='postgresql'
+            fi
+            echo $database | grep -e '^mysql' -i 1>/dev/null
+            if [ $? -eq 0 ]; then
+                database_server='mysql'
+            fi
             ;;
 
         N)
@@ -178,7 +198,25 @@ if [ $no_dependencies -eq 0 ]; then
     sudo="/usr/bin/sudo"
     check_if_exists $sudo
 
-    ${sudo} ${package_manager} ${package_manager_cmds} python python-virtualenv
+    # debian based && postgresql
+    if [ \( $os == "ubuntu" -o $os == "debian" \) -a $database_server == "postgresql" ]; then
+        database_requirements='libpq5'
+
+    # debian based && mysql
+    elif [ \( $os == "ubuntu" -o $os == "debian" \) -a $database_server == "mysql" ]; then
+        database_requirements='libmysqlclient18'
+
+    # RHEL based && postgresql
+    elif [ \( $os == "centos" \) -a $database_server == "postgresql" ]; then
+        database_requirements='postgresql-libs'
+
+    # RHEL based && mysql
+    elif [ \( $os == "centos" \) -a $database_server == "mysql" ]; then
+        database_requirements='mysql-libs'
+    fi
+
+    ${sudo} ${package_manager} ${package_manager_cmds} python \
+        python-virtualenv ${database_requirements}
 
     # check whether installation succeeded
     if [ ! $? -eq 0 ]; then
