@@ -225,6 +225,9 @@ if [ $no_dependencies -eq 0 ]; then
         echo "own:"
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
+        if [ ! -n $database_requirements ]; then
+            echo "- ${database_requirements}"
+        fi
         echo "and suppress installing them via -N runtime argument.${txtreset}"
         exit 4
     fi
