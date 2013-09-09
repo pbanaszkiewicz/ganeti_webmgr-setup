@@ -50,12 +50,12 @@ Wheels are put in subfolders in this pattern:
     ${wheels_dir}/{distribution}/{version}/{architecture}/
 
 Options:
+  -h                        Show this screen.
   -e <environment dir>      Specify virtual environment path. This gets erased
                             on every runtime.
   -g <GWM dir>              Where to clone GWM. If this path exists, GWM is not
                             cloned and existing copy is used instead.
-  -w <wheels dir>           Where to put built wheel packages.
-  -h                        Show this screen."
+  -w <wheels dir>           Where to put built wheel packages."
     exit 0
 }
 
@@ -108,6 +108,45 @@ while getopts "he:g:w:" opt; do
             ;;
     esac
 done
+
+### instal building dependencies
+case $os in
+    debian)
+        package_manager='apt-get'
+        package_manager_cmds='install'
+        check_if_exists "/usr/bin/${package_manager}"
+        ;;
+
+    ubuntu)
+        package_manager='apt-get'
+        package_manager_cmds='install'
+        check_if_exists "/usr/bin/${package_manager}"
+        ;;
+
+    centos)
+        package_manager='yum'
+        package_manager_cmds='install'
+        check_if_exists "/usr/bin/${package_manager}"
+        ;;
+
+    unknown)
+        # unknown Linux distribution
+        echo "${txtboldred}Unknown distribution! Cannot install required" \
+             "dependencies!"
+        echo "Please install on your own:"
+        echo "- Python (version 2.6.x or 2.7.x)"
+        echo "- python-virtualenv"
+        echo "...and run setup suppressing installation of required deps:"
+        echo "  $0 -N ${txtreset}"
+        exit 3
+        ;;
+esac
+
+sudo="/usr/bin/sudo"
+check_if_exists $sudo
+
+# TODO check for more dependencies
+${sudo} ${package_manager} ${package_manager_cmds} python python-dev
 
 check_if_exists "/bin/rm"
 check_if_exists "/usr/bin/virtualenv"
