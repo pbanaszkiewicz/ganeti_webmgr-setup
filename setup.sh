@@ -266,10 +266,10 @@ else
     # automatically.
 fi
 
-### updating pip and setuptools to the newest versions
+### updating pip and setuptools to the newest versions, installing wheel
 pip=${install_directory}/bin/pip
 check_if_exists $pip
-${pip} install --upgrade setuptools pip
+${pip} install --upgrade setuptools pip wheel
 
 # check if successfully upgraded pip and setuptools
 if [ ! $? -eq 0 ]; then
@@ -302,4 +302,24 @@ if [ ! $? -eq 0 ]; then
          "GWM documentation:"
     echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
     exit 6
+fi
+
+case $database_server in
+    postgresql)
+        ${pip} install --upgrade --use-wheel --find-link="${url}" psycopg2
+        ;;
+    mysql)
+        ${pip} install --upgrade --use-wheel --find-link="${url}" MySQL-python
+        ;;
+esac
+
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not install database" \
+        "dependencies"
+    echo "in this virtual environment:"
+    echo "  ${install_directory}${txtreset}"
+    echo "Please check if you have internet access and consult with official" \
+         "GWM documentation:"
+    echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
+    exit 7
 fi

@@ -113,20 +113,23 @@ done
 case $os in
     debian)
         package_manager='apt-get'
-        package_manager_cmds='install'
+        package_manager_cmds='install -y'
         check_if_exists "/usr/bin/${package_manager}"
+        database_requirements='libpq-dev libmysqlclient-dev'
         ;;
 
     ubuntu)
         package_manager='apt-get'
-        package_manager_cmds='install'
+        package_manager_cmds='install -y'
         check_if_exists "/usr/bin/${package_manager}"
+        database_requirements='libpq-dev libmysqlclient-dev'
         ;;
 
     centos)
         package_manager='yum'
-        package_manager_cmds='install'
+        package_manager_cmds='install -y'
         check_if_exists "/usr/bin/${package_manager}"
+        database_requirements='postgresql-libs mysql-libs'
         ;;
 
     unknown)
@@ -136,6 +139,7 @@ case $os in
         echo "Please install on your own:"
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
+        echo "- ${database_requirements}"
         echo "...and run setup suppressing installation of required deps:"
         echo "  $0 -N ${txtreset}"
         exit 3
@@ -146,7 +150,8 @@ sudo="/usr/bin/sudo"
 check_if_exists $sudo
 
 # TODO check for more dependencies
-${sudo} ${package_manager} ${package_manager_cmds} python python-dev
+${sudo} ${package_manager} ${package_manager_cmds} python python-dev \
+    ${database_requirements}
 
 check_if_exists "/bin/rm"
 check_if_exists "/usr/bin/virtualenv"
@@ -179,7 +184,7 @@ if [ ! $? -eq 0 ]; then
 fi
 
 # clone gwm if it doesn't exist
-if [ ! -d "{$gwm_dir}" ]; then
+if [ ! -d "${gwm_dir}" ]; then
     gwm_address='git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr'
     /usr/bin/git clone "${gwm_address}" "${gwm_dir}"
 
@@ -193,7 +198,8 @@ fi
 
 # install gwm into venv, put wheels to the wheel dir
 wheel_path="${wheels_dir}/${os}/${os_codename}/${architecture}"
-${pip} wheel --log=./pip.log --wheel-dir="${wheel_path}" "${gwm_dir}"
+${pip} wheel --log=./pip.log --wheel-dir="${wheel_path}" "${gwm_dir}" \
+    psycopg2 MySQL-python
 if [ ! $? -eq 0 ]; then
     echo "${txtboldred}Something went wrong. Could not create wheel" \
          "packages."
