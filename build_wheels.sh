@@ -40,7 +40,7 @@ echo "Build Ganeti Web Manager dependencies as wheel packages.
 
 Usage:
     $0 [-h]
-    $0 [-e <dir>] [-g <dir>] [-w <dir>]
+    $0 [-e <dir>] [-g <dir>] [-G] [-w <dir>]
 
 Default virtual environment path:   ${env_dir}
 Default GWM clone path:             ${gwm_dir}
@@ -55,6 +55,7 @@ Options:
                             on every runtime.
   -g <GWM dir>              Where to clone GWM. If this path exists, GWM is not
                             cloned and existing copy is used instead.
+  -G                        Remove GWM dir and therefore force cloning GWM.
   -w <wheels dir>           Where to put built wheel packages."
     exit 0
 }
@@ -85,19 +86,21 @@ fi
 #------------------------------------------------------------------------------
 
 ### Runtime arguments and help text
-while getopts "he:g:w:" opt; do
+force_gwm_refresh=0
+while getopts "he:g:Gw:" opt; do
     case $opt in
         h)
             usage
             ;;
-
         e)
             env_dir=${OPTARG}
             ;;
         g)
             gwm_dir=${OPTARG}
             ;;
-
+        G)
+            force_gwm_refresh=1
+            ;;
         w)
             wheels_dir=${OPTARG}
             ;;
@@ -129,7 +132,7 @@ case $os in
         package_manager='yum'
         package_manager_cmds='install -y'
         check_if_exists "/usr/bin/${package_manager}"
-        database_requirements='postgresql-libs mysql-libs'
+        database_requirements='postgresql-devel mysql-devel'
         ;;
 
     unknown)
@@ -149,7 +152,7 @@ esac
 sudo="/usr/bin/sudo"
 check_if_exists $sudo
 
-# TODO check for more dependencies
+# install building dependencies
 ${sudo} ${package_manager} ${package_manager_cmds} python python-dev \
     ${database_requirements}
 
@@ -183,13 +186,19 @@ if [ ! $? -eq 0 ]; then
     exit 4
 fi
 
-# clone gwm if it doesn't exist
-if [ ! -d "${gwm_dir}" ]; then
+# remove gwm if user wants to
+if [ $force_gwm_refresh -eq 1 ]; then
+    /bin/rm "${gwm_dir}" -rf 2>/dev/null
+fi
+
+# clone gwm
+if [  \( ! -d "${gwm_dir}" \) -o \( $force_gwm_refresh -eq 1 \) ]; then
     gwm_address='git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr'
     /usr/bin/git clone "${gwm_address}" "${gwm_dir}"
 
     if [ ! $? -eq 0 ]; then
-        echo "${txtboldred}Something went wrong. Could clone GWM repository."
+        echo "${txtboldred}Something went wrong. Could not clone GWM" \
+             "repository."
         echo "Check if repository address is correct:"
         echo "  ${gwm_address}${txtreset}"
         exit 5

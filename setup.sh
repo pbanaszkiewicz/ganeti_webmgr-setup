@@ -26,11 +26,7 @@
 # 7. creates configuration directory near that virtual environment with sane
 #    default settings in there and random ``SECRET_KEY``
 #
-# 8. installs GWM tools (ie. ``/usr/bin/gwm*``, like webserver or update
-#    utility) that use above configuration directory (for example through
-#    environment variable, like Django does with ``DJANGO_SETTINGS_MODULE``)
-#
-# 9. generates proper WSGI file for the project (that can work with custom
+# 8. generates proper WSGI file for the project (that can work with custom
 #    directory and virtual environment)
 
 # helpers: setting text colors
@@ -289,7 +285,6 @@ echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
 url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/${os}/${os_codename}/${architecture}/"
-echo $url
 
 ${pip} install --upgrade --use-wheel --find-link="${url}" ganeti_webmgr
 
@@ -304,22 +299,25 @@ if [ ! $? -eq 0 ]; then
     exit 6
 fi
 
-case $database_server in
-    postgresql)
-        ${pip} install --upgrade --use-wheel --find-link="${url}" psycopg2
-        ;;
-    mysql)
-        ${pip} install --upgrade --use-wheel --find-link="${url}" MySQL-python
-        ;;
-esac
+# install dependencies for database
+if [ $database_server != "sqlite" ]; then
+    case $database_server in
+        postgresql)
+            ${pip} install --upgrade --use-wheel --find-link="${url}" psycopg2
+            ;;
+        mysql)
+            ${pip} install --upgrade --use-wheel --find-link="${url}" MySQL-python
+            ;;
+    esac
 
-if [ ! $? -eq 0 ]; then
-    echo "${txtboldred}Something went wrong. Could not install database" \
-        "dependencies"
-    echo "in this virtual environment:"
-    echo "  ${install_directory}${txtreset}"
-    echo "Please check if you have internet access and consult with official" \
-         "GWM documentation:"
-    echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
-    exit 7
+    if [ ! $? -eq 0 ]; then
+        echo "${txtboldred}Something went wrong. Could not install database" \
+            "dependencies"
+        echo "in this virtual environment:"
+        echo "  ${install_directory}${txtreset}"
+        echo "Please check if you have internet access and consult with official" \
+             "GWM documentation:"
+        echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
+        exit 7
+    fi
 fi
