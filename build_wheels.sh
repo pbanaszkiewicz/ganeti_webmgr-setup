@@ -154,7 +154,7 @@ check_if_exists $sudo
 
 # install building dependencies
 ${sudo} ${package_manager} ${package_manager_cmds} python python-dev \
-    ${database_requirements}
+    python-virtualenv ${database_requirements}
 
 check_if_exists "/bin/rm"
 check_if_exists "/usr/bin/virtualenv"

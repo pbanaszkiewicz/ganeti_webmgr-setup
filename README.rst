@@ -30,6 +30,14 @@ script) that:
 .. _Ganeti Web Manager: http://ganeti-webmgr.readthedocs.org/en/latest/
 
 
+Requirements
+------------
+
+* Linux distribution: Debian, or Ubuntu, or CentOS
+* Architecture: x86 or x86_64
+* Standard UNIX tools, bash, git, sudo rights
+
+
 Necessary GWM changes
 ---------------------
 
@@ -75,3 +83,11 @@ The script's flow goes like this:
 7. put those packages (called *wheels*) to specific directory (the path is
    determined by OS and architecture, so for my system it'd be
    ``ubuntu/raring/x86_64/packages.whl``).
+
+
+Requirements
+------------
+
+* Linux distribution: Debian, Ubuntu or CentOS
+* Architecture: x86 or x86_64
+* Standard UNIX tools, bash, git, sudo rights

@@ -81,7 +81,7 @@ lsb_release='/usr/bin/lsb_release'
 architecture=`uname -i`
 os='unknown'
 
-if [ -x $lsb_release ]; then
+if [ -x "$lsb_release" ]; then
     # we pull in default values, should work for both Debian and Ubuntu
     os=`$lsb_release -s -i | tr "[:upper:]" "[:lower:]"`
 
@@ -115,21 +115,21 @@ while getopts "hu:d:D:N" opt; do
 
         u)
             upgrade=1
-            install_directory=${OPTARG}
+            install_directory="$OPTARG"
             no_dependencies=1
             ;;
 
         d)
-            install_directory=${OPTARG}
+            install_directory="$OPTARG"
             ;;
 
         D)
-            database=${OPTARG}
-            echo $database | grep -e '^postgres' -i 1>/dev/null
+            database="$OPTARG"
+            echo "$database" | grep -e '^postgres' -i 1>/dev/null
             if [ $? -eq 0 ]; then
                 database_server='postgresql'
             fi
-            echo $database | grep -e '^mysql' -i 1>/dev/null
+            echo "$database" | grep -e '^mysql' -i 1>/dev/null
             if [ $? -eq 0 ]; then
                 database_server='mysql'
             fi
@@ -155,19 +155,19 @@ if [ $no_dependencies -eq 0 ]; then
         debian)
             package_manager='apt-get'
             package_manager_cmds='install'
-            check_if_exists "/usr/bin/${package_manager}"
+            check_if_exists "/usr/bin/$package_manager"
             ;;
 
         ubuntu)
             package_manager='apt-get'
             package_manager_cmds='install'
-            check_if_exists "/usr/bin/${package_manager}"
+            check_if_exists "/usr/bin/$package_manager"
             ;;
 
         centos)
             package_manager='yum'
             package_manager_cmds='install'
-            check_if_exists "/usr/bin/${package_manager}"
+            check_if_exists "/usr/bin/$package_manager"
             ;;
 
         unknown)
@@ -192,22 +192,22 @@ if [ $no_dependencies -eq 0 ]; then
 
     ### installing system dependencies
     sudo="/usr/bin/sudo"
-    check_if_exists $sudo
+    check_if_exists "$sudo"
 
     # debian based && postgresql
-    if [ \( $os == "ubuntu" -o $os == "debian" \) -a $database_server == "postgresql" ]; then
+    if [ \( "$os" == "ubuntu" -o "$os" == "debian" \) -a "$database_server" == "postgresql" ]; then
         database_requirements='libpq5'
 
     # debian based && mysql
-    elif [ \( $os == "ubuntu" -o $os == "debian" \) -a $database_server == "mysql" ]; then
+    elif [ \( "$os" == "ubuntu" -o "$os" == "debian" \) -a "$database_server" == "mysql" ]; then
         database_requirements='libmysqlclient18'
 
     # RHEL based && postgresql
-    elif [ \( $os == "centos" \) -a $database_server == "postgresql" ]; then
+    elif [ \( "$os" == "centos" \) -a "$database_server" == "postgresql" ]; then
         database_requirements='postgresql-libs'
 
     # RHEL based && mysql
-    elif [ \( $os == "centos" \) -a $database_server == "mysql" ]; then
+    elif [ \( "$os" == "centos" \) -a "$database_server" == "mysql" ]; then
         database_requirements='mysql-libs'
     fi
 
@@ -222,7 +222,7 @@ if [ $no_dependencies -eq 0 ]; then
         echo "- Python (version 2.6.x or 2.7.x)"
         echo "- python-virtualenv"
         if [ ! -n $database_requirements ]; then
-            echo "- ${database_requirements}"
+            echo "- $database_requirements"
         fi
         echo "and suppress installing them via -N runtime argument.${txtreset}"
         exit 4
@@ -236,19 +236,19 @@ echo "------------------------------------------------------------------------"
 
 ### creating virtual environment
 venv='/usr/bin/virtualenv'
-check_if_exists $venv
+check_if_exists "$venv"
 
 # installing fresh
 if [ $upgrade -eq 0 ]; then
     echo "Installing to: $install_directory"
 
-    ${venv} --setuptools --no-site-packages ${install_directory}
+    ${venv} --setuptools --no-site-packages "$install_directory"
     # check if virtualenv has succeeded
     if [ ! $? -eq 0 ]; then
         echo "${txtboldred}Something went wrong. Could not create virtual" \
              "environment"
         echo "in this path:"
-        echo "  ${install_directory}${txtreset}"
+        echo "  $install_directory${txtreset}"
         echo "Please create virtual environment manually by using virtualenv" \
              "command."
         exit 5
@@ -263,8 +263,8 @@ else
 fi
 
 ### updating pip and setuptools to the newest versions, installing wheel
-pip=${install_directory}/bin/pip
-check_if_exists $pip
+pip="$install_directory/bin/pip"
+check_if_exists "$pip"
 ${pip} install --upgrade setuptools pip wheel
 
 # check if successfully upgraded pip and setuptools
@@ -272,8 +272,8 @@ if [ ! $? -eq 0 ]; then
     echo "${txtboldred}Something went wrong. Could not upgrade pip nor" \
          "setuptools"
     echo "in this virtual environment:"
-    echo "  ${install_directory}${txtreset}"
-    echo "Please upgrade pip and setuptools manually by issueing this" \
+    echo "  $install_directory${txtreset}"
+    echo "Please upgrade pip and setuptools manually by issuing this" \
          "command:"
     echo "  ${pip} install --upgrade setuptools pip"
     exit 5
@@ -284,15 +284,15 @@ echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
-url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/${os}/${os_codename}/${architecture}/"
+url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/$os/$os_codename/$architecture/"
 
-${pip} install --upgrade --use-wheel --find-link="${url}" ganeti_webmgr
+${pip} install --upgrade --use-wheel --find-link="$url" ganeti_webmgr
 
 if [ ! $? -eq 0 ]; then
     echo "${txtboldred}Something went wrong. Could not install GWM nor its" \
          "dependencies"
     echo "in this virtual environment:"
-    echo "  ${install_directory}${txtreset}"
+    echo "  $install_directory${txtreset}"
     echo "Please check if you have internet access and consult with official" \
          "GWM documentation:"
     echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
@@ -300,13 +300,13 @@ if [ ! $? -eq 0 ]; then
 fi
 
 # install dependencies for database
-if [ $database_server != "sqlite" ]; then
+if [ "$database_server" != "sqlite" ]; then
     case $database_server in
         postgresql)
-            ${pip} install --upgrade --use-wheel --find-link="${url}" psycopg2
+            ${pip} install --upgrade --use-wheel --find-link="$url" psycopg2
             ;;
         mysql)
-            ${pip} install --upgrade --use-wheel --find-link="${url}" MySQL-python
+            ${pip} install --upgrade --use-wheel --find-link="$url" MySQL-python
             ;;
     esac
 
@@ -314,10 +314,43 @@ if [ $database_server != "sqlite" ]; then
         echo "${txtboldred}Something went wrong. Could not install database" \
             "dependencies"
         echo "in this virtual environment:"
-        echo "  ${install_directory}${txtreset}"
+        echo "  $install_directory${txtreset}"
         echo "Please check if you have internet access and consult with official" \
              "GWM documentation:"
         echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
         exit 7
     fi
+fi
+
+
+### default configuration
+
+# TODO: alternatively get a tarball from GitHub and unzip it
+
+# clone pbanaszkiewicz's repo
+git='/usr/bin/git'
+check_if_exists "$git"
+
+config_repo='https://github.com/pbanaszkiewicz/ganeti_webmgr-config.git'
+
+${git} clone "$config_repo" "$install_directory/config"
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not download configuration"\
+        "files"
+    echo "from this Git repository:"
+    echo "  $config_repo${txtreset}"
+    echo "Please check if you have internet access, git installed and consult"\
+         "with official GWM documentation:"
+    echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
+    exit 8
+fi
+
+/bin/mv "$install_directory/config/gwm-manage.py" "$install_directory/bin/"
+
+# readlink provides us with absolute path to specified directory
+config_path=`/bin/readlink -m "$install_directory/config"`
+if [ $? -eq 0 ]; then
+    # if we used readlink, let's change hardcoded path in gwm-manage.py
+    /bin/sed -i "s;../config/;$config_path" \
+             "$install_directory/bin/gwm-manage.py"
 fi
