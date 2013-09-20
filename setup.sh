@@ -354,3 +354,8 @@ if [ $? -eq 0 ]; then
     /bin/sed -i "s;../config/;$config_path" \
              "$install_directory/bin/gwm-manage.py"
 fi
+
+### generating secrets
+# secret_path="$install_directory/.secrets/"
+# dd if=/dev/urandom bs=32 count=1 | base64 > "$secret_path/SECRET_KEY.txt"
+# dd if=/dev/urandom bs=32 count=1 | base64 > "$secret_path/MGR_API_KEY.txt"
