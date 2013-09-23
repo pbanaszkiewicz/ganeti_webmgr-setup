@@ -56,9 +56,9 @@ usage() {
 echo "Install (or upgrade) fresh Ganeti Web Manager from OSUOSL servers.
 
 Usage:
-    $0 [-h]
+    $0 -h
     $0 [-d <dir>] [-D <database>] [-N]
-    $0 [-u <dir>]
+    $0 -u <dir>
 
 Default installation directory: ./ganeti_webmgr
 Default database server:        SQLite
