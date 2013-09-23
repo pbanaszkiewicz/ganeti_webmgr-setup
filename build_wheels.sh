@@ -68,7 +68,7 @@ Options:
 
 # helper: architecture and OS recognizing
 lsb_release='/usr/bin/lsb_release'
-architecture=`uname -i`
+architecture=`uname -m`
 os='unknown'
 
 if [ -x $lsb_release ]; then
