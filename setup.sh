@@ -113,7 +113,7 @@ upgrade=0
 database_server='sqlite'
 
 ### Runtime arguments and help text
-while getopts "hu:d:D:N" opt; do
+while getopts "hu:d:D:Nw:" opt; do
     case $opt in
         h)
             usage
