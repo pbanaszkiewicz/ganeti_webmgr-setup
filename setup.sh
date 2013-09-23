@@ -51,17 +51,22 @@ check_if_exists() {
     fi
 }
 
+# default values
+install_directory='./ganeti_webmgr'
+base_url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr"
+
 # helper function: display help message
 usage() {
 echo "Install (or upgrade) fresh Ganeti Web Manager from OSUOSL servers.
 
 Usage:
     $0 -h
-    $0 [-d <dir>] [-D <database>] [-N]
+    $0 [-d <dir>] [-D <database>] [-N] [-w <address>]
     $0 -u <dir>
 
-Default installation directory: ./ganeti_webmgr
-Default database server:        SQLite
+Default installation directory:     $install_directory
+Default database server:            SQLite
+Default remote wheels location:     $base_url
 
 Options:
   -h                            Show this screen.
@@ -72,6 +77,8 @@ Options:
                                 (unless -N).  If you don't specify it, SQLite
                                 will be assumed the default DB.
   -N                            Don't try to install system dependencies.
+  -w <remote address>           Where wheel packages are stored.  Don't change
+                                this value unless you know what you're doing!
   -u <install_directory>        Upgrade existing installation. Forces -N."
     exit 0
 }
@@ -101,7 +108,6 @@ fi
 
 #------------------------------------------------------------------------------
 
-install_directory='./ganeti_webmgr'
 no_dependencies=0
 upgrade=0
 database_server='sqlite'
@@ -137,6 +143,10 @@ while getopts "hu:d:D:N" opt; do
 
         N)
             no_dependencies=1
+            ;;
+
+        w)
+            base_url="$OPTARG"
             ;;
 
         \?)
@@ -284,8 +294,7 @@ echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
-base_url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr"
-url="/$os/$os_codename/$architecture/"
+url="$base_url/$os/$os_codename/$architecture/"
 
 ${pip} install --upgrade --use-wheel --find-link="$url" ganeti_webmgr
 
