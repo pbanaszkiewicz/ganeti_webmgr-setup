@@ -284,7 +284,8 @@ echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
-url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr/$os/$os_codename/$architecture/"
+base_url="http://ftp.osuosl.org/pub/osl/ganeti-webmgr"
+url="/$os/$os_codename/$architecture/"
 
 ${pip} install --upgrade --use-wheel --find-link="$url" ganeti_webmgr
 

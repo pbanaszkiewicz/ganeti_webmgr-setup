@@ -11,7 +11,7 @@
 env_dir='./venv'
 gwm_dir='./gwm'
 wheels_dir='./wheels'
-$default_branch='master'
+default_branch='develop'
 gwm_address='git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr'
 
 # helpers: setting text colors
