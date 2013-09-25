@@ -361,7 +361,7 @@ fi
 config_path=`/bin/readlink -m "$install_directory/config"`
 if [ $? -eq 0 ]; then
     # if we used readlink, let's change hardcoded path in gwm-manage.py
-    /bin/sed -i "s;../config/;$config_path;" \
+    /bin/sed -i "s;../config;$config_path;" \
              "$install_directory/bin/gwm-manage.py"
 fi
 
