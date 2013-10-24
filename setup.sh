@@ -294,6 +294,7 @@ echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
+# WARNING: watch out for double slashes when concatenating these strings!
 url="$base_url/$os/$os_codename/$architecture/"
 
 ${pip} install --upgrade --use-wheel --find-link="$url" ganeti_webmgr
