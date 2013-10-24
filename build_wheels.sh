@@ -42,7 +42,7 @@ echo "Build Ganeti Web Manager dependencies as wheel packages.
 
 Usage:
     $0 -h
-    $0 [-e <dir>] [-g <dir>] [-G] [-b <branch>] [-a <git address>] [-w <dir>]
+    $0 [-e <dir>] [-g <dir>] [-G] [-b <branch>] [-a <git address>] [-w <dir>] [-N]
 
 Default virtual environment path:   $env_dir
 Default GWM clone path:             $gwm_dir
@@ -95,7 +95,7 @@ fi
 ### Runtime arguments and help text
 force_gwm_refresh=0
 no_dependencies=0
-while getopts "he:g:Gb:a:w:" opt; do
+while getopts "he:g:Gb:a:w:N" opt; do
     case $opt in
         h)
             usage
