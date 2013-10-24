@@ -62,7 +62,8 @@ Options:
   -G                        Remove GWM dir and therefore force cloning GWM.
   -b <branch>               Default branch to check out to after cloning GWM.
   -a <git address>          Git repository address GWM is cloned from.
-  -w <wheels dir>           Where to put built wheel packages."
+  -w <wheels dir>           Where to put built wheel packages.
+  -N                        Skip installing system dependencies."
     exit 0
 }
 
@@ -93,6 +94,7 @@ fi
 
 ### Runtime arguments and help text
 force_gwm_refresh=0
+no_dependencies=0
 while getopts "he:g:Gb:a:w:" opt; do
     case $opt in
         h)
@@ -117,6 +119,10 @@ while getopts "he:g:Gb:a:w:" opt; do
             wheels_dir="$OPTARG"
             ;;
 
+        N)
+            no_dependencies=1
+            ;;
+
         \?)
             # unknown parameter
             exit 2
@@ -125,41 +131,43 @@ while getopts "he:g:Gb:a:w:" opt; do
 done
 
 ### instal building dependencies
-case $os in
-    debian)
-        package_manager='apt-get'
-        package_manager_cmds='install -y'
-        check_if_exists "/usr/bin/$package_manager"
-        database_requirements='libpq-dev libmysqlclient-dev'
-        ;;
+if [ $no_dependencies -eq 0 ]; then
+    case $os in
+        debian)
+            package_manager='apt-get'
+            package_manager_cmds='install -y'
+            check_if_exists "/usr/bin/$package_manager"
+            database_requirements='libpq-dev libmysqlclient-dev'
+            ;;
 
-    ubuntu)
-        package_manager='apt-get'
-        package_manager_cmds='install -y'
-        check_if_exists "/usr/bin/$package_manager"
-        database_requirements='libpq-dev libmysqlclient-dev'
-        ;;
+        ubuntu)
+            package_manager='apt-get'
+            package_manager_cmds='install -y'
+            check_if_exists "/usr/bin/$package_manager"
+            database_requirements='libpq-dev libmysqlclient-dev'
+            ;;
 
-    centos)
-        package_manager='yum'
-        package_manager_cmds='install -y'
-        check_if_exists "/usr/bin/$package_manager"
-        database_requirements='postgresql-devel mysql-devel'
-        ;;
+        centos)
+            package_manager='yum'
+            package_manager_cmds='install -y'
+            check_if_exists "/usr/bin/$package_manager"
+            database_requirements='postgresql-devel mysql-devel'
+            ;;
 
-    unknown)
-        # unknown Linux distribution
-        echo "${txtboldred}Unknown distribution! Cannot install required" \
-             "dependencies!"
-        echo "Please install on your own:"
-        echo "- Python (version 2.6.x or 2.7.x)"
-        echo "- python-virtualenv"
-        echo "- $database_requirements"
-        echo "...and run setup suppressing installation of required deps:"
-        echo "  $0 -N ${txtreset}"
-        exit 3
-        ;;
-esac
+        unknown)
+            # unknown Linux distribution
+            echo "${txtboldred}Unknown distribution! Cannot install required" \
+                 "dependencies!"
+            echo "Please install on your own:"
+            echo "- Python (version 2.6.x or 2.7.x)"
+            echo "- python-virtualenv"
+            echo "- $database_requirements"
+            echo "...and run setup suppressing installation of required deps:"
+            echo "  $0 -N ${txtreset}"
+            exit 3
+            ;;
+    esac
+fi
 
 sudo="/usr/bin/sudo"
 check_if_exists $sudo
@@ -228,6 +236,7 @@ if [  \( ! -d "$gwm_dir" \) -o \( $force_gwm_refresh -eq 1 \) ]; then
 fi
 
 # install gwm into venv, put wheels to the wheel dir
+# WARNING: watch out for that concatenation of string paths!
 wheel_path="$wheels_dir/$os/$os_codename/$architecture"
 ${pip} wheel --log=./pip.log --wheel-dir="$wheel_path" "$gwm_dir" \
     psycopg2 MySQL-python
