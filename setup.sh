@@ -70,16 +70,17 @@ Default remote wheels location:     $base_url
 
 Options:
   -h                            Show this screen.
-  -d <install_directory>        Specify install directory.
-  -D <database_server>          Either 'postgresql' or 'mysql' or 'sqlite'.
+  -d <install directory>        Specify install directory.
+  -D <database server>          Either 'postgresql' or 'mysql' or 'sqlite'.
                                 This option will try to install required
                                 dependencies for selected database server
                                 (unless -N).  If you don't specify it, SQLite
                                 will be assumed the default DB.
   -N                            Don't try to install system dependencies.
-  -w <remote address>           Where wheel packages are stored.  Don't change
+  -w <wheels (local/remote) directory location>
+                                Where wheel packages are stored.  Don't change
                                 this value unless you know what you're doing!
-  -u <install_directory>        Upgrade existing installation. Forces -N."
+  -u <install directory>        Upgrade existing installation. Forces -N."
     exit 0
 }
 
