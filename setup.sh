@@ -380,6 +380,34 @@ if [ $? -eq 0 ]; then
              "$install_directory/bin/gwm-manage.py"
 fi
 
+# install noVNC
+
+# TODO: use fixed commit or stable version
+
+# clone kanaka's repo
+novnc_repo="https://github.com/kanaka/noVNC.git"
+
+# make sure src dir exists
+mkdir -p "${install_directory}/src"
+
+${git} clone "$novnc_repo" "$install_directory/src/noVNC"
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not install noVNC"
+    echo "from this Git repository:"
+    echo "  $config_repo${txtreset}"
+    echo "Please check if you have internet access, git installed and consult"\
+         "with official GWM documentation:"
+    echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
+    exit 9
+fi
+
+# if using GWM git version copy noVNC directly to src directory
+if [ "$git_version" -eq 1 ]; then
+    cp -r "${install_directory}/src/noVNC" "${install_directory}/src/ganeti-webmgr/ganeti_webmgr/static/novnc"
+else
+    cp -r "${install_directory}/src/noVNC" "${install_directory}/lib/python2*/ganeti-webmgr/ganeti_webmgr/static/novnc"
+fi
+
 ### generating secrets
 # secret_path="$install_directory/.secrets/"
 # dd if=/dev/urandom bs=32 count=1 | base64 > "$secret_path/SECRET_KEY.txt"
