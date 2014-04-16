@@ -12,7 +12,7 @@ env_dir='./venv'
 gwm_dir='./gwm'
 wheels_dir='./wheels'
 default_branch='develop'
-gwm_address='git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr'
+gwm_address='https://github.com/osuosl/ganeti_webmgr.git'
 
 # helpers: setting text colors
 txtbold=$(tput bold)
