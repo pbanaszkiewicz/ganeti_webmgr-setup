@@ -80,7 +80,9 @@ Options:
   -w <wheels (local/remote) directory location>
                                 Where wheel packages are stored.  Don't change
                                 this value unless you know what you're doing!
-  -u <install directory>        Upgrade existing installation. Forces -N."
+  -u <install directory>        Upgrade existing installation. Forces -N.
+  -g <branch>                   Install selected GWM branch from the osuosl git
+                                repsitory"
     exit 0
 }
 
@@ -112,9 +114,10 @@ fi
 no_dependencies=0
 upgrade=0
 database_server='sqlite'
+git_version=0
 
 ### Runtime arguments and help text
-while getopts "hu:d:D:Nw:" opt; do
+while getopts "hu:d:D:Nw:g:" opt; do
     case $opt in
         h)
             usage
@@ -148,6 +151,10 @@ while getopts "hu:d:D:Nw:" opt; do
 
         w)
             base_url="$OPTARG"
+            ;;
+        g)
+            git_version=1
+            git_branch="$OPTARG"
             ;;
 
         \?)
@@ -295,10 +302,19 @@ echo "------------------------------------------------------------------------"
 echo "Installing Ganeti Web Manager and its dependencies"
 echo "------------------------------------------------------------------------"
 
-# WARNING: watch out for double slashes when concatenating these strings!
-url="$base_url/$os/$os_codename/$architecture/"
 
-${pip} install --upgrade --use-wheel --find-link="$url" ganeti_webmgr
+git='/usr/bin/git'
+check_if_exists "$git"
+
+if [ "$git_version" -eq 1 ]; then
+    pip_args="-e git://git.osuosl.org/gitolite/ganeti/ganeti_webmgr/@${git_branch}#egg=ganeti_webmgr"
+else
+    # WARNING: watch out for double slashes when concatenating these strings!
+    url="$base_url/$os/$os_codename/$architecture/"
+    pip_args="--find-link="$url" ganeti_webmgr"
+fi
+
+${pip} install --upgrade --use-wheel ${pip_args}
 
 if [ ! $? -eq 0 ]; then
     echo "${txtboldred}Something went wrong. Could not install GWM nor its" \
@@ -340,9 +356,6 @@ fi
 # TODO: alternatively get a tarball from GitHub and unzip it
 
 # clone pbanaszkiewicz's repo
-git='/usr/bin/git'
-check_if_exists "$git"
-
 config_repo='https://github.com/pbanaszkiewicz/ganeti_webmgr-config.git'
 
 ${git} clone "$config_repo" "$install_directory/config"
@@ -365,6 +378,34 @@ if [ $? -eq 0 ]; then
     # if we used readlink, let's change hardcoded path in gwm-manage.py
     /bin/sed -i "s;../config;$config_path;" \
              "$install_directory/bin/gwm-manage.py"
+fi
+
+# install noVNC
+
+# TODO: use fixed commit or stable version
+
+# clone kanaka's repo
+novnc_repo="https://github.com/kanaka/noVNC.git"
+
+# make sure src dir exists
+mkdir -p "${install_directory}/src"
+
+${git} clone "$novnc_repo" "$install_directory/src/noVNC"
+if [ ! $? -eq 0 ]; then
+    echo "${txtboldred}Something went wrong. Could not install noVNC"
+    echo "from this Git repository:"
+    echo "  $config_repo${txtreset}"
+    echo "Please check if you have internet access, git installed and consult"\
+         "with official GWM documentation:"
+    echo "  http://ganeti-webmgr.readthedocs.org/en/latest/"
+    exit 9
+fi
+
+# if using GWM git version copy noVNC directly to src directory
+if [ "$git_version" -eq 1 ]; then
+    cp -r "${install_directory}/src/noVNC" "${install_directory}/src/ganeti-webmgr/ganeti_webmgr/static/novnc"
+else
+    cp -r "${install_directory}/src/noVNC" "${install_directory}/lib/python2*/ganeti-webmgr/ganeti_webmgr/static/novnc"
 fi
 
 ### generating secrets
